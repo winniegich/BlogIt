@@ -35,11 +35,11 @@ export const login = async function (req: Request, res: Response) {
             },
         });
         if(!user) {
-            return res.status(400).json({ message: "Wrong user details"});
+            return res.status(404).json({ message: "User not found"});
         }
         const passwordsMatch = await bcrypt.compare(password, user.password);
         if(!passwordsMatch) {
-            return res.status(400).json({ message: "Wrong password details"});
+            return res.status(401).json({ message: "Invalid credentials"});
         }
         const payload = {
             id: user.id,
@@ -49,7 +49,13 @@ export const login = async function (req: Request, res: Response) {
             emailAddress: user.emailAddress,
         };
         const token = jwt.sign(payload, process.env.JWT_SECRET_KEY!, { expiresIn: '14d' });
-        return res.status(200).cookie("authToken", token).json(payload);
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+            maxAge: 14 * 24 * 60 * 1000
+        });
+        res.status(200).json({ message: "Login successful", token, user: payload });
     }catch(e) {
         res.status(500).json({ message: "Something went wrong"});
     }
