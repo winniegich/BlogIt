@@ -16,7 +16,7 @@ export const createBlog = async (req: Request, res: Response) => {
                 userId: req.user.id
             }
         });
-        res.status(201).json({ message: "Blog created successfully"});
+        res.status(200).json({ message: "Blog created successfully"});
         return;
     }catch(e) {
         res.status(500).json({ message: "Something went wrong"});
@@ -103,25 +103,6 @@ export const deleteBlog = async (req: Request, res: Response) => {
         res.status(200).json({ message: "Blog successfully moved to trash." });
     } catch (e) {
         res.status(500).json({ message: "Something went wrong. Please try again later." });
-    }
-}
-
-// Fetch blogs in trash
-export const trash = async(req: Request, res: Response) => {
-    try {
-        const userId = req.user.id;
-        const blogs = await client.blog.findMany({
-            where: {
-                userId,
-                isDeleted: true
-            },
-        });
-        if (blogs.length === 0) {
-            return res.status(200).json({ message: "Trash is empty"});
-        }
-        return res.status(200).json(blogs)
-    }catch(e) {
-        return res.status(500).json({ message: "Something went wrong"})
     }
 }
 

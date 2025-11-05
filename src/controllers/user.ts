@@ -12,6 +12,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
                 id: userId
             },
             select: {
+                id: true,
                 firstName: true,
                 lastName: true,
                 emailAddress: true,
@@ -75,43 +76,43 @@ export const getUserBlogs = async (req: Request, res: Response) => {
 }
 
 // Deleting a user profile
-export const deleteProfile = async (req: Request, res: Response) => {
-    try {
-        const userId = req.user.id;
+// export const deleteProfile = async (req: Request, res: Response) => {
+//     try {
+//         const userId = req.user.id;
 
-        await client.user.update({
-            where: { 
-                id: userId 
-            },
-            data: { 
-                isDeleted: true
-            }
-        })
-        return res.status(200).json({ message: "Account deleted successfully" });
-    } catch(e) {
-        res.status(500).json({ message: "Something went wrong"});
-    }
-}
+//         await client.user.update({
+//             where: { 
+//                 id: userId 
+//             },
+//             data: { 
+//                 isDeleted: true
+//             }
+//         })
+//         return res.status(200).json({ message: "Account deleted successfully" });
+//     } catch(e) {
+//         res.status(500).json({ message: "Something went wrong"});
+//     }
+// }
 
 // Get user's trash
-export const getUserTrash = async (req: Request, res: Response) => {
+export const userTrash = async(req: Request, res: Response) => {
     try {
         const userId = req.user.id;
-        // console.log(req.user.id);
-        const blogs = await client.blog.findMany({
+        const trash = await client.blog.findMany({
             where: {
-                userId,
-                isDeleted: true
-            },
-            select: {
-                title: true,
-                synopsis: true,
-                featuredImageUrl: true,
-                content: true,
-            }
+                AND:[{userId: String(userId)}, { isDeleted: true}]
+                },
+                select: {
+                    title: true,
+                    synopsis: true,
+                    featuredImageUrl: true
+                }
         });
-        res.status(200).json(blogs)
-    } catch(e) {
-        res.status(500).json({ message: "Something went wrong" })
+        if (trash.length === 0) {
+            return res.status(404).json({ message: "No blogs found"});
+        }
+        return res.status(200).json(trash)
+    }catch(e) {
+        return res.status(500).json({ message: "Something went wrong"})
     }
 }
