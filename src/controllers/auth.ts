@@ -69,3 +69,35 @@ export const logout = function (req: Request, res: Response) {
         res.status(500).json({ message: "Something went wrong.Unable to logout"});
     }
 };
+
+// Update user's password
+export const updatePassword = async (req: Request, res: Response) => {
+    try {
+        const { previousPassword, password } = req.body;
+        const userId = req.user.id;
+        const user = await client.user.findUnique({
+            where: { id: userId }
+        })
+        if (!user) {
+            res.status(400).json({ message: "User does not exist" })
+            return
+        }
+        const passwordsMatch = await bcrypt.compare(previousPassword, user.password);
+        if (!passwordsMatch) {
+            res.status(400).json({ message: "Previous password is wrong"});
+            return;
+        }
+        const newPassword = await bcrypt.hash(password, 11);
+        await client.user.update({
+            where: {
+                id: userId
+            },
+            data: {
+                password: newPassword
+            }
+        })
+        res.status(200).json({ message: "Password updated successfully" });
+    } catch(e) {
+        res.status(500).json({ message: "Something went wrong"});
+    }
+}

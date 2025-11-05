@@ -6,8 +6,9 @@ import { checkUsernameAndEmail } from './middlewares/checkUsernameAndEmail.ts';
 import { checkPasswordStrength } from './middlewares/checkPasswordStrength.ts';
 import { verifyToken } from './middlewares/verifyToken.ts';
 import { validateBlogDetails } from './middlewares/validateBlogDetails.ts'
-import {register, login, logout} from './controllers/auth.ts'
+import {register, login, logout, updatePassword} from './controllers/auth.ts'
 import { createBlog, getBlogs, getBlog, deleteBlog, recoverDeletedBlog, updateBlog,permanentDeleteBlog, trash} from './controllers/blogs.ts'
+import { getUserProfile, updateProfile, getUserBlogs, deleteProfile, getUserTrash } from './controllers/user.ts';
 
 const app = express();
 dotenv.config();
@@ -22,8 +23,9 @@ app.get('/', (req:Request, res:Response) => {
 app.post('/auth/register', checkDetails, checkUsernameAndEmail, checkPasswordStrength, register);
 app.post('/auth/login', login);
 app.post('/auth/logout', logout);
+app.patch("/auth/updatePassword", verifyToken, updatePassword)
 
-// Blogs endpoint
+// Blogs endpoints
 app.post("/blogs",verifyToken,validateBlogDetails, createBlog)
 app.get("/blogs", verifyToken, getBlogs)
 app.get("/blogs/trash", verifyToken, trash)
@@ -32,6 +34,13 @@ app.patch("/blogs/:id", verifyToken, updateBlog)
 app.delete("/blogs/:id", verifyToken, deleteBlog)
 app.delete("/blogs/:id", verifyToken, permanentDeleteBlog)
 app.patch("/blogs/recover/:id", verifyToken, recoverDeletedBlog)
+
+// User endpoints
+app.get("/users", verifyToken, getUserProfile)
+app.get("/users/blogs", verifyToken, getUserBlogs)
+app.get("/users/trash", verifyToken, getUserTrash)
+app.patch("/users", verifyToken, updateProfile)
+app.delete("/users", verifyToken, deleteProfile)
 
 const PORT = 6000;
 app.listen(PORT, () => {

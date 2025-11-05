@@ -82,9 +82,9 @@ export const deleteBlog = async (req: Request, res: Response) => {
                 isDeleted: true
             }
         });
-        if (result.count === 0) {
-            return res.status(404).json({ message: "Blog not found"});
-        }
+        // if (result.count === 0) {
+        //     return res.status(404).json({ message: "Blog not found"});
+        // }
         return res.status(200).json({ message: "Blog moved to trash"});
     }catch(e) {
         res.status(500).json({ message: "Something went wrong"}); 
@@ -161,7 +161,7 @@ export const updateBlog = async (req: Request, res: Response) => {
 export const permanentDeleteBlog = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const blog = await client.blog.findUnique({
+      const blog = await client.blog.delete({
         where: { id: String(id) },
     });
     if (!blog) {
