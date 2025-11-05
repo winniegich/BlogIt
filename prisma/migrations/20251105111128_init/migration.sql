@@ -18,6 +18,23 @@ CREATE TABLE [dbo].[Users] (
     CONSTRAINT [Users_Username_key] UNIQUE NONCLUSTERED ([Username])
 );
 
+-- CreateTable
+CREATE TABLE [dbo].[Blogs] (
+    [id] NVARCHAR(1000) NOT NULL,
+    [BlogTitle] NVARCHAR(1000) NOT NULL,
+    [Synopsis] NVARCHAR(1000) NOT NULL,
+    [FeaturedImageUrl] NVARCHAR(1000),
+    [Content] NVARCHAR(1000) NOT NULL,
+    [IsDeleted] BIT NOT NULL CONSTRAINT [Blogs_IsDeleted_df] DEFAULT 0,
+    [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [Blogs_CreatedAt_df] DEFAULT CURRENT_TIMESTAMP,
+    [LastUpdated] DATETIME2 NOT NULL,
+    [UserId] NVARCHAR(1000) NOT NULL,
+    CONSTRAINT [Blogs_pkey] PRIMARY KEY CLUSTERED ([id])
+);
+
+-- AddForeignKey
+ALTER TABLE [dbo].[Blogs] ADD CONSTRAINT [Blogs_UserId_fkey] FOREIGN KEY ([UserId]) REFERENCES [dbo].[Users]([id]) ON DELETE NO ACTION ON UPDATE CASCADE;
+
 COMMIT TRAN;
 
 END TRY

@@ -31,8 +31,7 @@ export const getBlogs = async (req: Request, res: Response) => {
         const blogs = await client.blog.findMany({
             where: {
                 userId, 
-                isDeleted: false,
-                isPermanentlyDeleted: false
+                isDeleted: false
             }
         });
         res.status(200).json(blogs);
@@ -69,37 +68,52 @@ export const getBlog = async (req: Request, res: Response) => {
 export const deleteBlog = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const userId = req.user.id;
+        if (!id) {
+            return res.status(400).json({ message: "Blog id is required." });
+        }
 
-        const result = await client.blog.updateMany({
+        const existingBlog = await client.blog.findMany({
             where: {
-                id: String(id), 
-                userId ,
-                isDeleted: false,
-                isPermanentlyDeleted: false
+                AND: [
+                    { id: String(id) },
+                    { isDeleted: false }
+                ]
+            }
+        });
+        if (existingBlog.length === 0) {
+            const anyBlog = await client.blog.findFirst({
+                where: { id: String(id) }
+            });
+            
+            if (!anyBlog) {
+                return res.status(404).json({ message: "Blog not found" });
+            } else {
+                return res.status(400).json({ message: "Blog is already in trash." });
+            }
+        }
+
+        const trashedBlog = await client.blog.update({
+            where: {
+                id: String(id)
             },
             data: {
                 isDeleted: true
             }
         });
-        // if (result.count === 0) {
-        //     return res.status(404).json({ message: "Blog not found"});
-        // }
-        return res.status(200).json({ message: "Blog moved to trash"});
-    }catch(e) {
-        res.status(500).json({ message: "Something went wrong"}); 
+        res.status(200).json({ message: "Blog successfully moved to trash." });
+    } catch (e) {
+        res.status(500).json({ message: "Something went wrong. Please try again later." });
     }
-};
+}
 
-// Move blog to trash
+// Fetch blogs in trash
 export const trash = async(req: Request, res: Response) => {
     try {
         const userId = req.user.id;
         const blogs = await client.blog.findMany({
             where: {
                 userId,
-                isDeleted: true,
-                isPermanentlyDeleted: false
+                isDeleted: true
             },
         });
         if (blogs.length === 0) {
@@ -112,25 +126,42 @@ export const trash = async(req: Request, res: Response) => {
 }
 
 // Recover a Blog from trash
-export const recoverDeletedBlog = async(req: Request, res:Response) => {
-    try {
-        const {id} = req.params;
-        const userId = req.user.id;
-
-        await client.blog.updateMany({
+export const recoverTrash = async(req: Request, res: Response) => {
+    try{
+        const {id} = req.params
+        if (!id) {
+            return res.status(400).json({
+                message: "Blog id is required."
+            });
+        }
+        const inTrash = await client.blog.findMany({
             where: {
-                id: String(id),
-                userId
-            },
-            data: {
-                isDeleted: false
-            },
+                AND: [{id: String(id)}, {isDeleted: true}]
+            }
         });
-        return res.status(200).json({ message: "Blog recovered  successfully"});
-    } catch(e) {
-        return res.status(500).json({ message: "Something went wrong"});
+        if (inTrash.length === 0) {
+            const blog = await client.blog.findFirst({
+                where: {id: String(id)}
+            });
+            if(!blog){
+                return res.status(404).json({ message: "Blog not found" });
+            }else{
+                res.status(200).json({ message: "Blog already restored" });
+            }
+        }
+        const trashedBlog = await client.blog.update({
+            where: {
+                id: String(id)
+            },
+            data:{
+                isDeleted: false
+            }
+        });
+        res.status(200).json({ message: "Blog restored successfully.", blog: trashedBlog });
+    }catch(err){
+        res.status(500).json({ message: "Something went wrong. Please try again later." });
     }
-};
+}
 
 // Update Blog
 export const updateBlog = async (req: Request, res: Response) => {
@@ -158,23 +189,30 @@ export const updateBlog = async (req: Request, res: Response) => {
 };
 
 // Permanent delete
-export const permanentDeleteBlog = async (req: Request, res: Response) => {
-    try {
-      const { id } = req.params;
-      const blog = await client.blog.delete({
-        where: { id: String(id) },
-    });
-    if (!blog) {
-        return res.status(404).json({ message: "Blog already permanently deleted"});
+export const deletePermanently = async(req: Request, res: Response) => {
+    try{
+        const {id} = req.params
+        const userId = req.user?.id
+        if (!userId) {
+            return res.status(401).json({
+                message: "Unauthorized. Please log in."
+            });
+        }
+        const existing = await client.blog.findMany({
+            where: {
+                AND: [{id: String(id)}, {userId: String(userId)}]
+            }
+        });
+        if(existing.length === 0){
+            return res.status(404).json({ message: "Blog not found." });
+        }
+        const deletedBlog = await client.blog.deleteMany({
+            where: {
+                AND: [{id: String(id)}, {userId: String(userId)}]
+            }
+        });
+        res.status(200).json({ message: "Blog deleted successfully." });
+    }catch(e){ 
+        res.status(500).json({ message: "Something went wrong. Please try again later." });
     }
-    if (!blog.isDeleted) {
-        return res.status(400).json({ message: "You can only permanently delete trashed blogs"});
-    }
-    await client.blog.delete({
-        where: { id: String(id) },
-    });
-    return res.status(200).json({ message: "Blog deleted permanently and cannot be recovered."});
-    } catch (error) {
-        return res.status(500).json({ message: "Something went wrong! Kindly try again."})
-    }
-};
+}

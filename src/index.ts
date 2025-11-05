@@ -7,7 +7,7 @@ import { checkPasswordStrength } from './middlewares/checkPasswordStrength.ts';
 import { verifyToken } from './middlewares/verifyToken.ts';
 import { validateBlogDetails } from './middlewares/validateBlogDetails.ts'
 import {register, login, logout, updatePassword} from './controllers/auth.ts'
-import { createBlog, getBlogs, getBlog, deleteBlog, recoverDeletedBlog, updateBlog,permanentDeleteBlog, trash} from './controllers/blogs.ts'
+import { createBlog, getBlogs, getBlog, deleteBlog, recoverTrash, updateBlog, deletePermanently, trash} from './controllers/blogs.ts'
 import { getUserProfile, updateProfile, getUserBlogs, deleteProfile, getUserTrash } from './controllers/user.ts';
 
 const app = express();
@@ -31,9 +31,9 @@ app.get("/blogs", verifyToken, getBlogs)
 app.get("/blogs/trash", verifyToken, trash)
 app.get("/blogs/:id", verifyToken, getBlog)
 app.patch("/blogs/:id", verifyToken, updateBlog)
-app.delete("/blogs/:id", verifyToken, deleteBlog)
-app.delete("/blogs/:id", verifyToken, permanentDeleteBlog)
-app.patch("/blogs/recover/:id", verifyToken, recoverDeletedBlog)
+app.patch("/blogs/trash/:id", verifyToken, deleteBlog)
+app.delete("/blogs/:id", verifyToken, deletePermanently)
+app.patch("/blogs/recover/:id", verifyToken, recoverTrash)
 
 // User endpoints
 app.get("/users", verifyToken, getUserProfile)

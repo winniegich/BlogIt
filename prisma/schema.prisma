@@ -35,7 +35,6 @@ model Blog {
   featuredImageUrl     String?  @map("FeaturedImageUrl")
   content              String   @map("Content")
   isDeleted            Boolean  @default(false) @map("IsDeleted")
-  isPermanentlyDeleted Boolean  @default(false)
   createdAt            DateTime @default(now()) @map("CreatedAt")
   lastUpdated          DateTime @updatedAt @map("LastUpdated")
   userId               String   @map("UserId")
