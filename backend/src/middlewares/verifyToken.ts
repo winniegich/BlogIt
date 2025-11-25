@@ -1,15 +1,6 @@
 import { type Request, type Response, type NextFunction} from 'express';
 import jwt from 'jsonwebtoken' ;
 
-// declare global {
-//     namespace Express {
-//         interface Request {
-//             user: User;
-//             cookies?: Record<string,string>;
-//         }
-//     }
-// }
-
 interface User {
     id: string;
     firstName: string;

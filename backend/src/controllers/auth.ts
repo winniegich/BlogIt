@@ -1,9 +1,11 @@
 import express, {type Request, type Response} from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import {PrismaClient} from '@prisma/client';
+// import {PrismaClient} from '@prisma/client';
+import prisma from '../lib/prisma';
 
-const client = new PrismaClient();
+// const client = new PrismaClient();
+const client = prisma;
 
 // Registration endpoint
 export const register = async function(req: Request, res: Response) {
@@ -19,9 +21,9 @@ export const register = async function(req: Request, res: Response) {
             password : hashedPassword
            }
         })
-        res.status(201).json({ message: "User registered successfully"});  
+        return res.status(201).json({ message: "User registered successfully"});  
     }catch(e) { 
-        res.status(500).json({ message: "Something went wrong"})
+        return res.status(500).json({ message: "Something went wrong"})
     }
 };
 

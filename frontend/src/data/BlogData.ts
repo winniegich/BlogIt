@@ -1,4 +1,3 @@
-
 export type BlogType = {
     id: string;
     title: string;
@@ -26,9 +25,9 @@ export type BlogType = {
   **Try this today:**  
   Declutter one corner of your room. Feel the lightness.  
       `,
-      author: "Claire Nora",
+      author: "Winnie Gichuki",
       createdAt: "2025-11-24",
-      featuredImg: "https://res.cloudinary.com/demo/image/upload/v1620212345/minimalism.jpg"
+      featuredImg: "https://res.cloudinary.com/dlhjs2xu0/image/upload/v1764071676/pexels-gabby-k-6373514_gf9kvk.jpg"
     },
     {
       id: "2",
@@ -51,7 +50,7 @@ export type BlogType = {
       `,
       author: "Winnie Gichuki",
       createdAt: "2025-11-25",
-      featuredImg: "https://res.cloudinary.com/demo/image/upload/v1620212345/purpose.jpg"
+      featuredImg: "https://res.cloudinary.com/dlhjs2xu0/image/upload/v1764071647/pexels-karola-g-6794576_hbbnqb.jpg"
     },
     {
       id: "3",
@@ -76,7 +75,7 @@ export type BlogType = {
       `,
       author: "Winnie Gichuki",
       createdAt: "2025-11-26",
-      featuredImg: "https://res.cloudinary.com/demo/image/upload/v1620212345/digitalrest.jpg"
+      featuredImg: "https://res.cloudinary.com/dlhjs2xu0/image/upload/v1764071496/pexels-sound-on-3756879_wmmvzo.jpg"
     },
     {
       id: "4",
@@ -100,7 +99,7 @@ export type BlogType = {
       `,
       author: "Winnie Gichuki",
       createdAt: "2025-11-27",
-      featuredImg: "https://res.cloudinary.com/demo/image/upload/v1620212345/healingroutines.jpg"
+      featuredImg: "https://res.cloudinary.com/dlhjs2xu0/image/upload/v1764071603/pexels-lilartsy-3278769_bkv40x.jpg"
     },
   ];
   

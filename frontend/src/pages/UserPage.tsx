@@ -11,7 +11,7 @@ import {
 import ArticleIcon from "@mui/icons-material/Article";
 import BlogCard from "../components/BlogCard";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 function UserPage() {
   const dummyBlogs = [
@@ -49,12 +49,16 @@ function UserPage() {
     firstName: "Guest",   
   };
 
-  const [user, setUser] = useState(null);
+  const [user] = useState(() => {
+  return JSON.parse(localStorage.getItem("user") || "null");
+});
 
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-    if (storedUser) setUser(storedUser);
-  }, []);
+  // const [user, setUser] = useState(null);
+
+  // useEffect(() => {
+  //   const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+  //   if (storedUser) setUser(storedUser);
+  // }, []);
 
 
   const activeUser = user || guest;

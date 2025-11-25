@@ -5,12 +5,19 @@ import {
   Stack,
   Container,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios, { AxiosError } from "axios"; // import isAxiosError
+import axiosInstance from "../api/axios";
+
+interface BlogForm {
+  title: string;
+  synopsis: string;
+  content: string;
+}
 
 function NewBlog() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<BlogForm>({
     title: "",
     synopsis: "",
     content: "",
@@ -21,7 +28,16 @@ function NewBlog() {
 
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Clean up preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
@@ -33,11 +49,11 @@ function NewBlog() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      setPreview(URL.createObjectURL(file)); 
+      setPreview(URL.createObjectURL(file));
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!selectedFile) {
@@ -49,33 +65,39 @@ function NewBlog() {
     formData.append("title", form.title);
     formData.append("synopsis", form.synopsis);
     formData.append("content", form.content);
-    formData.append("image", selectedFile); 
+    formData.append("image", selectedFile);
 
     try {
-      const response = await axios.post("https://blogit-website-5.onrender.com/blogs", formData, {
+      const response = await axiosInstance.post("/create-blog", formData, {
         withCredentials: true,
         headers: {
           "Content-Type": "multipart/form-data",
-        
         },
       });
 
-      if (response.status === 201) {
+      if (response.status === 201 || response.status === 200) {
         navigate("/blogs");
       }
-    } catch (err) {
-      console.error("Error submitting blog:", err);
-      alert("Error creating blog");
+    } catch (error: unknown) {
+      // Proper type guard for AxiosError
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError<{ message: string }>;
+        const msg = axiosError.response?.data?.message ?? "Error creating blog";
+        alert(msg);
+      } else {
+        alert("An unexpected error occurred");
+      }
+      console.error("Error submitting blog:", error);
     }
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 2 }}>
-      <Typography variant="h4" mb={2}>
+    <Container maxWidth="md" sx={{ mt: 4 }}>
+      <Typography variant="h4" mb={3}>
         Create a New Blog
       </Typography>
       <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
+        <Stack spacing={3}>
           <TextField
             label="Title"
             name="title"
@@ -102,12 +124,22 @@ function NewBlog() {
             multiline
             minRows={7}
           />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            required
-          />
+
+          <Button
+            variant="contained"
+            component="label"
+            sx={{ textTransform: "none" }}
+          >
+            Upload Featured Image
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleFileChange}
+              required
+            />
+          </Button>
+
           {preview && (
             <img
               src={preview}
@@ -115,7 +147,16 @@ function NewBlog() {
               style={{ maxHeight: "200px", borderRadius: "8px" }}
             />
           )}
-          <Button type="submit" variant="contained" size="large">
+
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            sx={{
+              backgroundColor: "#819067",
+              "&:hover": { backgroundColor: "#6d7b59" },
+            }}
+          >
             Publish Blog
           </Button>
         </Stack>

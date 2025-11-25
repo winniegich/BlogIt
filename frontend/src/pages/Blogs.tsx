@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios"; 
+import axiosInstance from "../api/axios";
 import {
   Container,
   Avatar,
@@ -11,47 +12,68 @@ import {
   Button,
   Box,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import { Link } from "react-router-dom";
 
-type Blog = {
-  id: string;
+interface Author {
+  firstName: string;
+  lastName: string;
+}
+
+interface Blog {
+  _id: string;
   title: string;
-  synopsis: string;
+  synopsis?: string;
   content: string;
-  featuredImg: string;
-  dateCreated: string; 
-  author: {
-    firstName: string;
-    lastName: string;
-  };
-};
+  featuredImg?: string;
+  dateCreated: string;
+  author: Author;
+}
 
 function Blogs() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const fetchBlogs = async (): Promise<void> => {
       try {
-        const res = await axios.get("https://blogit-website-5.onrender.com");
-        setBlogs(res.data);
-      } catch (error) {
-        console.error("Failed to fetch blogs:", error);
+        setLoading(true);
+        const response = await axiosInstance.get<Blog[]>("/get-blogs");
+        setBlogs(response.data);
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          
+          const axiosError = err as AxiosError<{ message: string }>;
+          setError(axiosError.response?.data?.message || "Failed to fetch blogs.");
+        } else {
+          setError("Failed to fetch blogs.");
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchBlogs();
   }, []);
 
+  if (loading)
+    return (
+      <Box sx={{ minHeight: "70vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+
+  if (error)
+    return (
+      <Box sx={{ minHeight: "70vh", p: 4 }}>
+        <Typography color="error">{error}</Typography>
+      </Box>
+    );
+
   return (
-    <Box
-      sx={{
-        minHeight: "70vh",
-        backgroundImage: "linear-gradient(to right, white, white)",
-        px: 4,
-        py: 4,
-      }}
-    >
+    <Box sx={{ minHeight: "70vh", px: 4, py: 4 }}>
       <Container>
         <Typography
           variant="h5"
@@ -67,34 +89,37 @@ function Blogs() {
           direction="row"
           flexWrap="wrap"
           gap={3}
-          useFlexGap
           justifyContent="flex-start"
         >
-         {blogs.map((blog) => {
-  const initials = `${blog.author.firstName[0]}`;
-  const date = new Date(blog.dateCreated).toLocaleDateString("en", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+          {blogs.map((blog) => {
+            const initials = `${blog.author.firstName[0]}${blog.author.lastName[0]}`;
+            const date = new Date(blog.dateCreated).toLocaleDateString("en", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
 
             return (
               <Box
-                key={blog.id}
+                key={blog._id}
                 sx={{ width: { xs: "100%", sm: "48%", md: "30%" } }}
               >
                 <Card sx={{ height: "100%" }}>
-                  <CardMedia
-                    component="img"
-                    height="180"
-                    image={blog.featuredImg}
-                    alt={blog.title}
-                  />
+                  {blog.featuredImg && (
+                    <CardMedia
+                      component="img"
+                      height="180"
+                      image={blog.featuredImg}
+                      alt={blog.title}
+                    />
+                  )}
                   <CardContent>
                     <Typography variant="h6">{blog.title}</Typography>
-                    <Typography variant="body2" color="text.secondary" mt={1}>
-                      {blog.synopsis}
-                    </Typography>
+                    {blog.synopsis && (
+                      <Typography variant="body2" color="text.secondary" mt={1}>
+                        {blog.synopsis}
+                      </Typography>
+                    )}
 
                     <Stack direction="row" spacing={1} mt={2} alignItems="center">
                       <Avatar sx={{ bgcolor: "#6d4c41", width: 40, height: 40 }}>
@@ -114,7 +139,7 @@ function Blogs() {
                     <Button
                       size="small"
                       component={Link}
-                      to={`/blogsDetails/${blog.id}`}
+                      to={`/blogsDetails/${blog._id}`}
                       variant="outlined"
                     >
                       Read More

@@ -1,4 +1,3 @@
-
 import { Box, Typography, IconButton } from '@mui/material';
 import { GrInstagram } from "react-icons/gr";
 import { FaFacebook } from "react-icons/fa";

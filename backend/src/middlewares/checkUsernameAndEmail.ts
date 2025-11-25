@@ -1,7 +1,9 @@
 import express, { type Request, type Response, type NextFunction} from 'express';
-import PrismaClient from '@prisma/client';
+// import PrismaClient from '@prisma/client';
+import prisma from '../lib/prisma';
 
-const client = new PrismaClient.PrismaClient();
+// const client = new PrismaClient.PrismaClient();
+const client = prisma;
 
 export async function checkUsernameAndEmail(req: Request, res: Response, next: NextFunction) {
     try {

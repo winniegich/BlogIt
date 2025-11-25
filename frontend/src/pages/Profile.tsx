@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Typography,
@@ -12,23 +12,29 @@ import {
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import useUser from "../hooks/UseUser";
-import axios from "axios";
+import { userAPI, authAPI } from "../services/api";
+import { AxiosError } from "axios";
 
 interface User {
+  id?: string;
   firstName?: string;
   lastName?: string;
   username?: string;
-  email?: string;
+  emailAddress?: string;
+}
+
+interface ApiErrorResponse {
+  message?: string;
 }
 
 function Profile() {
   const user: User | null = useUser();
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    username: "",
-    email: "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    username: user?.username || "",
+    emailAddress: user?.emailAddress || "",
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -38,17 +44,8 @@ function Profile() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        username: user.username || "",
-        email: user.email || "",
-      });
-    }
-  }, [user]);
+  const [loadingInfo, setLoadingInfo] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
 
   const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -59,18 +56,27 @@ function Profile() {
   };
 
   const updateInfo = async () => {
+    if (!user?.id) {
+      setError("User ID not found");
+      return;
+    }
+
+    setLoadingInfo(true);
+    setError("");
+    setSuccess("");
+
     try {
-      const res = await axios.put("/api/auth/update", formData, {
-        withCredentials: true,
-      });
+      const res = await userAPI.updateProfile(user.id, formData);
+
       if (res.data) {
         localStorage.setItem("user", JSON.stringify(res.data));
         setSuccess("Info updated successfully!");
-        setError("");
       }
     } catch (err) {
-      setError("Failed to update info.");
-      setSuccess("");
+      const axiosErr = err as AxiosError<ApiErrorResponse>;
+      setError(axiosErr.response?.data?.message || "Failed to update info.");
+    } finally {
+      setLoadingInfo(false);
     }
   };
 
@@ -82,21 +88,23 @@ function Profile() {
       return setError("Please fill in the new password.");
     }
 
+    setLoadingPassword(true);
+    setError("");
+    setSuccess("");
+
     try {
-      await axios.patch(
-        "/api/auth/update-password",
-        {
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        },
-        { withCredentials: true }
-      );
+      await authAPI.updatePassword({
+        previousPassword: passwordData.currentPassword,
+        password: passwordData.newPassword,
+      });
+
       setSuccess("Password updated!");
-      setError("");
       setPasswordData({ currentPassword: "", newPassword: "" });
     } catch (err) {
-      setError("Incorrect current password.");
-      setSuccess("");
+      const axiosErr = err as AxiosError<ApiErrorResponse>;
+      setError(axiosErr.response?.data?.message || "Incorrect current password.");
+    } finally {
+      setLoadingPassword(false);
     }
   };
 
@@ -116,6 +124,7 @@ function Profile() {
       </Box>
 
       <Stack direction="row" spacing={3} flexWrap="wrap">
+        {/* Update Info */}
         <Card
           sx={{
             bgcolor: "#f5f5f5",
@@ -127,45 +136,56 @@ function Profile() {
         >
           <CardContent>
             <Typography variant="h6" mb={1}>
-              <SettingsIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+              <SettingsIcon sx={{ mr: 1 }} />
               Update Info
             </Typography>
+
             <Stack spacing={2}>
               <TextField
                 label="First Name"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleInfoChange}
-                fullWidth
               />
               <TextField
                 label="Last Name"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleInfoChange}
-                fullWidth
               />
               <TextField
                 label="Username"
                 name="username"
                 value={formData.username}
                 onChange={handleInfoChange}
-                fullWidth
               />
               <TextField
                 label="Email"
-                name="email"
-                value={formData.email}
+                name="emailAddress"
+                value={formData.emailAddress}
                 onChange={handleInfoChange}
-                fullWidth
               />
-              <Button variant="contained" onClick={updateInfo}>
-                Save Changes
+
+              <Button variant="contained" onClick={updateInfo} disabled={loadingInfo}>
+                {loadingInfo ? "Saving..." : "Save Changes"}
               </Button>
+
+              {error && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {error}
+                </Alert>
+              )}
+
+              {success && (
+                <Alert severity="success" sx={{ mt: 2 }}>
+                  {success}
+                </Alert>
+              )}
             </Stack>
           </CardContent>
         </Card>
 
+        {/* Change Password */}
         <Card
           sx={{
             bgcolor: "#f5f5f5",
@@ -179,6 +199,7 @@ function Profile() {
             <Typography variant="h6" mb={2}>
               🔐 Change Password
             </Typography>
+
             <Stack spacing={2}>
               <TextField
                 label="Current Password"
@@ -186,7 +207,6 @@ function Profile() {
                 type="password"
                 value={passwordData.currentPassword}
                 onChange={handlePasswordChange}
-                fullWidth
               />
               <TextField
                 label="New Password"
@@ -194,21 +214,15 @@ function Profile() {
                 type="password"
                 value={passwordData.newPassword}
                 onChange={handlePasswordChange}
-                fullWidth
               />
-              <Button variant="contained" onClick={updatePassword}>
-                Update Password
+
+              <Button
+                variant="contained"
+                onClick={updatePassword}
+                disabled={loadingPassword}
+              >
+                {loadingPassword ? "Updating..." : "Update Password"}
               </Button>
-              {error && (
-                <Alert severity="error" sx={{ mt: 3 }}>
-                  {error}
-                </Alert>
-              )}
-              {success && (
-                <Alert severity="success" sx={{ mt: 3 }}>
-                  {success}
-                </Alert>
-              )}
             </Stack>
           </CardContent>
         </Card>

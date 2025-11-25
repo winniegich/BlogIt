@@ -1,6 +1,7 @@
 import express, {type Request, type Response} from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import { checkDetails } from './middlewares/checkDetails.ts';
 import { checkUsernameAndEmail } from './middlewares/checkUsernameAndEmail.ts';
 import { checkPasswordStrength } from './middlewares/checkPasswordStrength.ts';
@@ -15,6 +16,10 @@ dotenv.config();
 
 app.use(express.json());
 app.use(cookieParser());
+
+app.use(cors({origin: ["http://localhost:5173"], 
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+    credentials: true}));
 
 app.get('/', (req:Request, res:Response) => {
     res.status(200).send('<h1>Welcome to BlogIt</h1>');
