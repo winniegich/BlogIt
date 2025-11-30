@@ -1,157 +1,158 @@
-import { useEffect, useState } from "react";
-import {
-  Container,
-  Typography,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions,
-  Button,
-  Box,
-  Stack,
-} from "@mui/material";
-import { userAPI, blogAPI } from "../services/api";
+import React from "react";
+import type { AxiosResponse } from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import BlogCard from "../components/BlogCard";
+import { userAPI, restoreBlog, permanentDeleteBlog } from "../services/api";
+import type { Blog } from "../types/Blog";
+import { Box, Container, Typography, CircularProgress, Stack } from "@mui/material";
 
-type Blog = {
-  id: string;
-  title: string;
-  synopsis: string;
-  featuredImageUrl: string;
-  createdAt: string;
-};
+const Trash: React.FC = () => {
+  const queryClient = useQueryClient();
 
-function Trash() {
-  const [trashedBlogs, setTrashedBlogs] = useState<Blog[]>([]);
+  // Fetch deleted blogs
+  const { data, isLoading, isError, error } = useQuery<Blog[], Error>({
+    queryKey: ["deletedBlogs"],
+    queryFn: async () => {
+      const res = await userAPI.getTrash();
+      console.log("🗑️ Fetched trash data:", res.data);
+      return res.data;
+    },
+  });
 
-  useEffect(() => {
-    const fetchTrash = async () => {
-      try {
-        const res = await userAPI.getTrash();
-        setTrashedBlogs(res.data);
-      } catch (error) {
-        console.error("Failed to fetch trash:", error);
-      }
-    };
-
-    fetchTrash();
-  }, []);
-
-  const handleRecover = async (id: string) => {
-    try {
-      await blogAPI.recover(id);
-      setTrashedBlogs((prev) => prev.filter((blog) => blog.id !== id));
-      alert("Blog recovered successfully!");
-    } catch (error) {
-      console.error("Failed to recover blog:", error);
-      alert("Failed to recover blog");
+  // Restore mutation
+  const restoreMutation = useMutation<AxiosResponse, Error, string>({
+    mutationFn: (id) => {
+      console.log("🔄 Restoring blog ID:", id);
+      return restoreBlog(id);
+    },
+    onSuccess: (response) => {
+      console.log("✅ Restore successful:", response.data);
+      queryClient.invalidateQueries({ queryKey: ["deletedBlogs"] });
+      queryClient.invalidateQueries({ queryKey: ["blogs"] }); // Also refresh main blogs
+    },
+    onError: (error) => {
+      console.error("❌ Restore failed:", error);
     }
+  });
+
+  // Permanent delete mutation
+  const deleteMutation = useMutation<AxiosResponse, Error, string>({
+    mutationFn: (id) => {
+      console.log("🗑️ Permanently deleting blog ID:", id);
+      return permanentDeleteBlog(id);
+    },
+    onSuccess: (response) => {
+      console.log("✅ Permanent delete successful:", response.data);
+      queryClient.invalidateQueries({ queryKey: ["deletedBlogs"] });
+    },
+    onError: (error) => {
+      console.error("❌ Permanent delete failed:", error);
+    }
+  });
+
+  const handleRestore = (id: string) => {
+    console.log("🔄 Restore clicked for ID:", id);
+    if (!id) {
+      console.error("❌ Cannot restore: Blog ID missing");
+      alert("Error: Blog ID is missing");
+      return;
+    }
+
+    restoreMutation.mutate(id, {
+      onError: (err) => {
+        console.error("Restore error:", err);
+        alert("Failed to restore blog: " + err.message);
+      },
+      onSuccess: (res) => {
+        alert(res.data?.message ?? "Blog restored successfully!");
+      },
+    });
   };
 
-  const handlePermanentDelete = async (id: string) => {
-    if (!confirm("Are you sure? This action cannot be undone.")) return;
-
-    try {
-      await blogAPI.permanentDelete(id);
-      setTrashedBlogs((prev) => prev.filter((blog) => blog.id !== id));
-      alert("Blog permanently deleted");
-    } catch (error) {
-      console.error("Failed to delete blog:", error);
-      alert("Failed to delete blog");
+  const handlePermanentDelete = (id: string) => {
+    console.log("🗑️ Permanent delete clicked for ID:", id);
+    if (!id) {
+      console.error("❌ Cannot delete: Blog ID missing");
+      alert("Error: Blog ID is missing");
+      return;
     }
+
+    if (!window.confirm("Are you sure you want to permanently delete this blog? This cannot be undone!")) {
+      return;
+    }
+
+    deleteMutation.mutate(id, {
+      onError: (err) => {
+        console.error("Delete error:", err);
+        alert("Failed to delete blog: " + err.message);
+      },
+      onSuccess: (res) => {
+        alert(res.data?.message ?? "Blog deleted permanently!");
+      },
+    });
   };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ minHeight: "70vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <CircularProgress sx={{ color: "#3A86FF" }} />
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Box sx={{ minHeight: "70vh", p: 4, textAlign: "center" }}>
+        <Typography sx={{ color: "#d32f2f" }}>
+          Error loading trash: {error?.message}
+        </Typography>
+      </Box>
+    );
+  }
+
+  const blogs = data ?? [];
 
   return (
-    <Box
-      sx={{
-        minHeight: "70vh",
-        backgroundImage: "linear-gradient(to right, white, white)",
-        px: 4,
-        py: 4,
-      }}
-    >
+    <Box sx={{ minHeight: "70vh", px: { xs: 3, md: 6 }, py: 4 }}>
       <Container>
         <Typography
           variant="h5"
           fontWeight="medium"
           mb={3}
           fontFamily="cursive"
-          color="black"
+          sx={{ color: "#3A86FF" }}
         >
-          🗑️ Trash
+          Trash
         </Typography>
 
-        {trashedBlogs.length === 0 ? (
-          <Typography variant="body1" color="text.secondary">
-            Your trash is empty.
+        {blogs.length === 0 ? (
+          <Typography sx={{ color: "#4361EE", textAlign: "center", mt: 4 }}>
+            Trash is empty.
           </Typography>
         ) : (
-          <Stack
-            direction="row"
-            flexWrap="wrap"
-            gap={3}
-            useFlexGap
-            justifyContent="flex-start"
-          >
-            {trashedBlogs.map((blog) => {
-              const date = new Date(blog.createdAt).toLocaleDateString("en", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              });
-
-              return (
-                <Box
-                  key={blog.id}
-                  sx={{ width: { xs: "100%", sm: "48%", md: "30%" } }}
-                >
-                  <Card sx={{ height: "100%", opacity: 0.9 }}>
-                    <CardMedia
-                      component="img"
-                      height="180"
-                      image={blog.featuredImageUrl}
-                      alt={blog.title}
-                    />
-                    <CardContent>
-                      <Typography variant="h6">{blog.title}</Typography>
-                      <Typography variant="body2" color="text.secondary" mt={1}>
-                        {blog.synopsis}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        mt={2}
-                        display="block"
-                      >
-                        Deleted on {date}
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="success"
-                        onClick={() => handleRecover(blog.id)}
-                      >
-                        Recover
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="error"
-                        onClick={() => handlePermanentDelete(blog.id)}
-                      >
-                        Delete Forever
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Box>
-              );
-            })}
+          <Stack direction="row" flexWrap="wrap" justifyContent="flex-start" gap={3}>
+            {blogs.map((blog) => (
+              <Box
+                key={blog.id}
+                sx={{
+                  width: { xs: "100%", sm: "48%", md: "30%" },
+                }}
+              >
+                <BlogCard
+                  blog={blog}
+                  restore={() => handleRestore(blog.id)}
+                  restoreMutation={restoreMutation}
+                  permanentDelete={() => handlePermanentDelete(blog.id)}
+                  permanentDeleteMutation={deleteMutation}
+                  showReadMore={false}
+                />
+              </Box>
+            ))}
           </Stack>
         )}
       </Container>
     </Box>
   );
-}
+};
 
 export default Trash;

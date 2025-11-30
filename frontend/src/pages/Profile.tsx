@@ -115,7 +115,7 @@ function Profile() {
   return (
     <Box maxWidth="xl" mx="20px" mt={2} mb={3}>
       <Box display="flex" alignItems="center" gap={1} mb={3}>
-        <Avatar sx={{ bgcolor: "#6d4c41", width: 50, height: 50 }}>
+        <Avatar sx={{ bgcolor: "#3A86FF", width: 50, height: 50 }}>
           {initials}
         </Avatar>
         <Typography variant="h6" fontWeight="bold">
@@ -136,7 +136,7 @@ function Profile() {
         >
           <CardContent>
             <Typography variant="h6" mb={1}>
-              <SettingsIcon sx={{ mr: 1 }} />
+              <SettingsIcon sx={{ mr: 1, color: "#3A86FF" }} />
               Update Info
             </Typography>
 
@@ -166,7 +166,16 @@ function Profile() {
                 onChange={handleInfoChange}
               />
 
-              <Button variant="contained" onClick={updateInfo} disabled={loadingInfo}>
+              <Button
+                variant="contained"
+                onClick={updateInfo}
+                disabled={loadingInfo}
+                sx={{
+                  backgroundColor: "#3A86FF",
+                  "&:hover": { backgroundColor: "#4361EE" },
+                  textTransform: "none",
+                }}
+              >
                 {loadingInfo ? "Saving..." : "Save Changes"}
               </Button>
 
@@ -196,7 +205,7 @@ function Profile() {
           }}
         >
           <CardContent>
-            <Typography variant="h6" mb={2}>
+            <Typography variant="h6" mb={2} color="#3A86FF">
               🔐 Change Password
             </Typography>
 
@@ -220,6 +229,11 @@ function Profile() {
                 variant="contained"
                 onClick={updatePassword}
                 disabled={loadingPassword}
+                sx={{
+                  backgroundColor: "#3A86FF",
+                  "&:hover": { backgroundColor: "#4361EE" },
+                  textTransform: "none",
+                }}
               >
                 {loadingPassword ? "Updating..." : "Update Password"}
               </Button>

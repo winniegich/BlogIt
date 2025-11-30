@@ -1,170 +1,159 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Box,
   Container,
   Typography,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions,
-  Button,
-  Avatar,
-  Stack,
   CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import axiosInstance from "../api/axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import BlogCard from "../components/BlogCard";
+import { getMyBlogs, deleteBlog } from "../services/api";
 
 interface Blog {
   _id: string;
   title: string;
   synopsis?: string;
-  content: string;
   featuredImg?: string;
-  dateCreated: string;
+  createdAt?: string;
   author: {
     firstName: string;
     lastName: string;
   };
 }
 
-function MyBlog() {
+const MyBlogs = () => {
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBlogId, setSelectedBlogId] = useState<string | null>(null);
 
-  // --- Fetch user's blogs ---
-  const { data: blogs = [], isLoading, isError, error } = useQuery<Blog[], Error>({
-    queryKey: ["user-blogs"],
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["myBlogs"],
     queryFn: async () => {
-      const res = await axiosInstance.get<Blog[]>("/get-user-blogs");
-      return res.data;
+      const res = await getMyBlogs();
+      return res.data as { data: Blog[] };
     },
   });
 
-  // --- Delete mutation ---
+  const blogs = data?.data ?? [];
+
   const deleteMutation = useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
-      await axiosInstance.delete(`/delete-blog/${id}`);
+      await deleteBlog(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-blogs"] });
+      queryClient.invalidateQueries({ queryKey: ["myBlogs"] });
       setDeleteDialogOpen(false);
       setSelectedBlogId(null);
     },
-    onError: (err: unknown) => {
-      if (err instanceof Error) {
-        alert(err.message || "Failed to delete blog");
-      } else {
-        alert("Failed to delete blog");
-      }
+    onError: (err) => {
+      alert(err.message || "Failed to delete blog.");
     },
   });
 
-  const handleDeleteClick = (id: string) => {
+  const openDeleteDialog = (id: string) => {
     setSelectedBlogId(id);
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const confirmDelete = () => {
     if (selectedBlogId) deleteMutation.mutate(selectedBlogId);
   };
 
   if (isLoading)
     return (
-      <Box sx={{ minHeight: "60vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <CircularProgress />
+      <Box
+        sx={{
+          minHeight: "60vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <CircularProgress sx={{ color: "#3A86FF" }} />
       </Box>
     );
 
   if (isError)
     return (
       <Container sx={{ mt: 6 }}>
-        <Typography color="error">{error?.message}</Typography>
+        <Typography color="error">
+          {error?.message || "Failed to fetch your blogs."}
+        </Typography>
       </Container>
     );
 
   if (blogs.length === 0)
     return (
-      <Container sx={{ mt: 6 }}>
-        <Typography variant="h6">You haven’t created any blogs yet.</Typography>
-        <Button component={Link} to="/create-blog" variant="contained" sx={{ mt: 2, backgroundColor: "#819067" }}>
+      <Container sx={{ mt: 6, textAlign: "center" }}>
+        <Typography variant="h6" mb={2}>
+          You haven’t created any blogs yet.
+        </Typography>
+        <Button
+          href="/create-blog"
+          variant="contained"
+          sx={{
+            mt: 2,
+            backgroundColor: "#4361EE",
+            "&:hover": { backgroundColor: "#3F51B5" },
+            borderRadius: "24px",
+            textTransform: "none",
+            fontWeight: "bold",
+          }}
+        >
           Create Your First Blog
         </Button>
       </Container>
     );
 
   return (
-    <Box sx={{ minHeight: "70vh", px: 4, py: 4 }}>
-      <Container>
-        <Typography variant="h5" fontWeight="medium" mb={3}>
-          My Blogs
-        </Typography>
+    <Container sx={{ minHeight: "70vh", py: 5 }}>
+      <Typography variant="h5" fontWeight="medium" mb={3} color="#3A86FF">
+        My Blogs
+      </Typography>
 
-        <Stack direction="row" flexWrap="wrap" gap={3}>
-          {blogs.map((blog: Blog) => {
-            const initials = `${blog.author.firstName[0]}${blog.author.lastName[0]}`;
-            const date = new Date(blog.dateCreated).toLocaleDateString("en", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            });
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {blogs.map((blog) => (
+          <BlogCard
+            blog={blog}
+            key={blog._id}
+            onDelete={() => openDeleteDialog(blog._id)}
+          />
+        ))}
+      </div>
 
-            return (
-              <Box key={blog._id} sx={{ width: { xs: "100%", sm: "48%", md: "30%" } }}>
-                <Card sx={{ height: "100%" }}>
-                  {blog.featuredImg && <CardMedia component="img" height="180" image={blog.featuredImg} alt={blog.title} />}
-                  <CardContent>
-                    <Typography variant="h6">{blog.title}</Typography>
-                    {blog.synopsis && <Typography variant="body2" color="text.secondary" mt={1}>{blog.synopsis}</Typography>}
-                    <Stack direction="row" spacing={1} mt={2} alignItems="center">
-                      <Avatar sx={{ bgcolor: "#6d4c41", width: 40, height: 40 }}>{initials}</Avatar>
-                      <Box>
-                        <Typography variant="caption" display="block">
-                          By {blog.author.firstName} {blog.author.lastName}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {date}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </CardContent>
-
-                  <CardActions>
-                    <Button component={Link} to={`/edit-blog/${blog._id}`} size="small" variant="outlined" sx={{ mr: 1 }}>
-                      Edit
-                    </Button>
-                    <Button size="small" variant="outlined" color="error" onClick={() => handleDeleteClick(blog._id)}>
-                      Delete
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Box>
-            );
-          })}
-        </Stack>
-      </Container>
-
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Delete Blog?</DialogTitle>
+        <DialogTitle sx={{ color: "#3A86FF" }}>Delete Blog?</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this blog? This action cannot be undone.</Typography>
+          <Typography>
+            Are you sure you want to delete this blog? This action cannot be
+            undone.
+          </Typography>
         </DialogContent>
+
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button color="error" onClick={handleConfirmDelete} disabled={deleteMutation.isPending}>
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            sx={{ textTransform: "none", color: "#4361EE" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            onClick={confirmDelete}
+            disabled={deleteMutation.status === "pending"}
+            sx={{ textTransform: "none", fontWeight: "bold" }}
+          >
+            {deleteMutation.status === "pending" ? "Deleting..." : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Container>
   );
-}
+};
 
-export default MyBlog;
+export default MyBlogs;

@@ -29,18 +29,21 @@ function SignUp() {
   const { isPending, mutate } = useMutation({
     mutationKey: ["register_user"],
     mutationFn: async (newUser: User) => {
-      const response = await axios.post("http://localhost:6000/auth/register", newUser);
+      const response = await axios.post(
+        "http://localhost:5000/auth/register",
+        newUser,
+        { withCredentials: true }
+      );
       return response.data;
     },
     onError: (error: unknown) => {
       const err = error as AxiosError<ApiErrorResponse>;
-      const msg = err.response?.data?.message || "Registration failed.";
-      setFormErrors(msg);
+      const message = err.response?.data?.message || "Registration failed.";
+      setFormErrors(message);
     },
     onSuccess: () => {
-      // Redirect user to login page
       navigate("/login");
-    }
+    },
   });
 
   const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
@@ -78,7 +81,7 @@ function SignUp() {
         )}
 
         <Typography variant="h5" fontWeight="600" color="#37474f" mb={3}>
-          Join <span style={{ color: "#819067" }}>BlogIt</span>
+          Join <span style={{ color: "#3A86FF" }}>BlogIt</span>
         </Typography>
 
         <Stack spacing={3}>
@@ -129,11 +132,9 @@ function SignUp() {
               py: 1.5,
               fontWeight: "bold",
               borderRadius: "12px",
-              backgroundColor: "#819067",
+              backgroundColor: "#3A86FF",
+              "&:hover": { backgroundColor: "#4361EE" },
               transition: "all 0.3s",
-              "&:hover": {
-                backgroundColor: "#6d7b59",
-              },
             }}
           >
             {isPending ? "Signing Up..." : "Sign Up"}
@@ -146,7 +147,7 @@ function SignUp() {
         <a
           href="/login"
           style={{
-            color: "#819067",
+            color: "#3A86FF",
             textDecoration: "none",
             fontWeight: "bold",
           }}

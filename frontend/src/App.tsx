@@ -1,3 +1,4 @@
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -15,10 +16,11 @@ import NewBlog from "./pages/NewBlog";
 import Profile from "./pages/Profile";
 import BlogDetails from "./pages/BlogDetails";
 import EditBlog from "./pages/EditBlog";
+import Trash from "./pages/Trash.tsx";
 
 const client = new QueryClient();
 
-function App() {
+const App: React.FC = () => {
   return (
     <QueryClientProvider client={client}>
       <Router>
@@ -33,21 +35,24 @@ function App() {
 
           {/* Authenticated User Pages */}
           <Route element={<UserLayout />}>
-            <Route path="/user" element={<UserPage />} />
+            <Route path="/userPage" element={<UserPage />} />
+            {/* <Route path="/userPage" element={<UserPage blogs={sampleBlogs}/>} /> */}
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/blog/:id" element={<BlogDetails />} />
             <Route path="/new-blog" element={<NewBlog />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/edit-blog/:id" element={<EditBlog />} />
+            <Route path="/trash" element={<Trash />} />
+
           </Route>
 
-          {/* Catch All */}
+          {/* Not Found */}
           <Route path="*" element={<NotFound />} />
 
         </Routes>
       </Router>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;

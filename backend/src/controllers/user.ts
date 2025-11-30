@@ -102,19 +102,35 @@ export const userTrash = async(req: Request, res: Response) => {
         const userId = req.user.id;
         const trash = await client.blog.findMany({
             where: {
-                AND:[{userId: String(userId)}, { isDeleted: true}]
-                },
-                select: {
-                    title: true,
-                    synopsis: true,
-                    featuredImageUrl: true
+                userId: String(userId),
+                isDeleted: true
+            },
+            select: {
+                id: true,              // ⭐ CRITICAL: Must include ID
+                title: true,
+                synopsis: true,
+                featuredImageUrl: true,
+                createdAt: true,       // Include timestamp
+                user: {                // Include user data
+                    select: {
+                        firstName: true,
+                        lastName: true
+                    }
                 }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
         });
+        
         if (trash.length === 0) {
-            return res.status(404).json({ message: "No blogs found"});
+            return res.status(200).json([]); // Return empty array, not 404
         }
-        return res.status(200).json(trash)
-    }catch(e) {
-        return res.status(500).json({ message: "Something went wrong"})
+        
+        console.log("🗑️ Trash blogs:", trash);
+        return res.status(200).json(trash);
+    } catch(e) {
+        console.error("❌ Trash fetch error:", e);
+        return res.status(500).json({ message: "Something went wrong" });
     }
 }

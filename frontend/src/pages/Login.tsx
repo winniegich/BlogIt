@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
-import axiosInstance from "../api/axios";
+import axiosInstance from "../services/axiosInstance";
 import { AxiosError } from "axios";
 
 interface LoginDetails {
@@ -30,7 +30,10 @@ function Login() {
 
   const mutation = useMutation<LoginResponse, AxiosError, LoginDetails>({
     mutationFn: async (loginDetails: LoginDetails) => {
-      const response = await axiosInstance.post<LoginResponse>("/login", loginDetails);
+      const response = await axiosInstance.post<LoginResponse>(
+        "/auth/login",
+        loginDetails
+      );
       return response.data;
     },
     onError: (err: AxiosError) => {
@@ -47,7 +50,7 @@ function Login() {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
       }
-      navigate("/UserPage");
+      navigate("/userPage");
     },
   });
 
@@ -57,7 +60,7 @@ function Login() {
     mutation.mutate({ identifier, password });
   };
 
-  const isLoading = mutation.status === "pending"; 
+  const isLoading = mutation.status === "pending";
 
   return (
     <Box
@@ -65,7 +68,7 @@ function Login() {
       sx={{
         margin: "4rem auto",
         maxWidth: "500px",
-        background: "linear-gradient(145deg, #f5f5f5, #ffffff)",
+        background: "#E0F7FF", // soft light blue background
         boxShadow: "0 8px 20px rgba(0,0,0,0.1)",
         borderRadius: "20px",
         p: 5,
@@ -79,8 +82,14 @@ function Login() {
           </Alert>
         )}
 
-        <Typography variant="h5" fontWeight="600" color="#37474f" mb={3}>
-          Welcome back to <span style={{ color: "#819067" }}>BlogIt</span>
+        <Typography
+          variant="h5"
+          fontWeight="600"
+          color="#3A86FF"
+          mb={3}
+          fontFamily="cursive"
+        >
+          Welcome back to <span style={{ color: "#4361EE" }}>BlogIt</span>
         </Typography>
 
         <Stack spacing={3}>
@@ -90,7 +99,7 @@ function Login() {
             fullWidth
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            sx={{ backgroundColor: "#f9f9f9", borderRadius: "10px" }}
+            sx={{ backgroundColor: "#f0f8ff", borderRadius: "10px" }}
           />
           <TextField
             label="Password"
@@ -99,7 +108,7 @@ function Login() {
             fullWidth
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            sx={{ backgroundColor: "#f9f9f9", borderRadius: "10px" }}
+            sx={{ backgroundColor: "#f0f8ff", borderRadius: "10px" }}
           />
 
           <Button
@@ -110,11 +119,11 @@ function Login() {
               mt: 1,
               py: 1.5,
               fontWeight: "bold",
-              borderRadius: "12px",
-              backgroundColor: "#819067",
+              borderRadius: "24px",
+              backgroundColor: "#4361EE",
               transition: "all 0.3s",
               "&:hover": {
-                backgroundColor: "#6d7b59",
+                backgroundColor: "#3F51B5",
               },
             }}
           >
@@ -128,7 +137,7 @@ function Login() {
         <Link
           to="/signUp"
           style={{
-            color: "#819067",
+            color: "#4361EE",
             textDecoration: "none",
             fontWeight: "bold",
           }}

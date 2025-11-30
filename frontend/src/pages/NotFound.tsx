@@ -14,10 +14,10 @@ function NotFound() {
         px: 3,
       }}
     >
-      <Typography variant="h2" fontWeight="bold" mb={2}>
+      <Typography variant="h2" fontWeight="bold" mb={2} color="#3A86FF">
         404
       </Typography>
-      <Typography variant="h5" mb={3}>
+      <Typography variant="h5" mb={3} color="#4361EE">
         Oops! Page Not Found
       </Typography>
       <Typography variant="body1" color="text.secondary" mb={4}>
@@ -28,9 +28,9 @@ function NotFound() {
         to="/"
         variant="contained"
         sx={{
-          backgroundColor: "#819067",
+          backgroundColor: "#3A86FF",
           "&:hover": {
-            backgroundColor: "#6d7b59",
+            backgroundColor: "#4361EE",
           },
           textTransform: "none",
           px: 4,
